@@ -18,7 +18,6 @@ class TeachersController extends Controller
     {
         try {
             $teachers = Teacher::with('subjects')->get();
-
             if ($teachers->isEmpty()) {
                 return response()->json([
                     'status' => false,
@@ -68,6 +67,15 @@ class TeachersController extends Controller
             ], 422);
         }
         try {
+
+              // Handle image upload
+        $imagePath = null;
+        if ($request->hasFile('profile_picture')) {
+            $image = $request->file('profile_picture');
+            $imageName = uniqid() . '_' . time() . '.' . $image->getClientOriginalExtension(); // Unique name
+            $imagePath = $image->storeAs('teachers/profile_pictures', $imageName, 'public'); // Stores in /storage/app/public/teachers/profile_pictures
+        }
+
             $teacher = Teacher::create([
                 'name' => $request->name,
                 'email' => $request->email,
@@ -75,7 +83,7 @@ class TeachersController extends Controller
                 'address' => $request->address,
                 'qualification' => $request->qualification,
                 'bio' => $request->bio,
-                'profile_picture' => $request->profile_picture,
+                'profile_picture' => $imagePath,                
                 'created_by' => auth()->id(),
                 'updated_by' => auth()->id()
             ]);

@@ -48,6 +48,12 @@ public function subjects()
     return $this->belongsToMany(Subject::class, 'subject_teacher', 'teacher_id', 'subject_id');
 }
 
+public function courses()
+{
+    return $this->belongsToMany(Course::class);
+}
+
+
 
 
 

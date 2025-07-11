@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\API\EventsController;
+use App\Http\Controllers\API\GalleryController;
+use App\Http\Controllers\API\NoticesController;
 use App\Http\Controllers\API\SchoolInformationController;
 use App\Http\Controllers\API\TeachersController;
 use App\Http\Controllers\SubjectsController;
@@ -44,7 +47,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
 // ? API Routes for Teacher Management
-
 Route::get('/teachers', [TeachersController::class, 'index']);
 Route::get('/teachers/{id}', [TeachersController::class, 'show']);
 
@@ -58,9 +60,47 @@ Route::middleware('auth:sanctum')->group(function () {
 // ? API Routes for Subject Management
 Route::get('/subjects', [SubjectsController::class, 'index']);
 Route::get('/subjects/{id}', [SubjectsController::class, 'show']);
-
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/subjects', [SubjectsController::class, 'store']);
     Route::put('/subjects/{id}', [SubjectsController::class, 'update']);
     Route::delete('/subjects/{id}', [SubjectsController::class, 'destroy']);
 });
+
+
+
+// ? API Routes for Events Management
+Route::get('/events', [EventsController::class, 'index']);
+Route::get('/events/{id}', [EventsController::class, 'show']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/events', [EventsController::class, 'store']);
+    Route::put('/events/{id}', [EventsController::class, 'update']);
+    Route::delete('/events/{id}', [EventsController::class, 'destroy']);
+});
+
+// ? API Routes for Gallery Management
+Route::get('/gallery', [GalleryController::class, 'index']);
+Route::get('/gallery/{id}', [GalleryController::class, 'show']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/gallery', [GalleryController::class, 'store']);
+    Route::put('/gallery/{id}', [GalleryController::class, 'update']);
+    Route::delete('/gallery/{id}', [GalleryController::class, 'destroy']);
+});
+
+
+// ? API Routes for Notices Management
+Route::get('/notices', [NoticesController::class, 'index']);
+Route::get('/notices/{id}', [NoticesController::class, 'show']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/notices', [NoticesController::class, 'store']);
+    Route::put('/notices/{id}', [NoticesController::class, 'update']);
+    Route::delete('/notices/{id}', [NoticesController::class, 'destroy']);
+});
+
+
+
+
+
+

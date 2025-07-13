@@ -37,30 +37,42 @@ class GalleryController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function store(Request $request)
-    {
-        $galleryData = $request->all();
+{
+    $validator = \Validator::make($request->all(), [
+        'title' => 'required|string|max:255',
+        'description' => 'nullable|string',
+        'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+    ]);
 
-        $validator = \Validator::make($galleryData, [
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'image' => 'required|image|max:2048'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        $gallery = Gallery::create($galleryData);
-
+    if ($validator->fails()) {
         return response()->json([
-            'status' => true,
-            'data' => $gallery
-        ], 201);
+            'status' => false,
+            'message' => 'Validation failed',
+            'errors' => $validator->errors()
+        ], 422);
     }
+
+    // Handle image upload
+    $imagePath = null;
+    if ($request->hasFile('image')) {
+        $image = $request->file('image');
+        $imageName = uniqid() . '_' . time() . '.' . $image->getClientOriginalExtension();
+        $imagePath = $image->storeAs('gallery/images', $imageName, 'public'); // stored in storage/app/public/gallery/images
+    }
+
+    $gallery = new Gallery();
+    $gallery->title = $request->title;
+    $gallery->description = $request->description;
+    $gallery->image = $imagePath;
+    $gallery->save();
+
+    return response()->json([
+        'status' => true,
+        'message' => 'Image uploaded successfully',
+        'data' => $gallery,
+    ], 201);
+}
+
 
     /**
      * Display the specified resource.

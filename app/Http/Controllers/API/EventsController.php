@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Events;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class EventsController extends Controller
 {
@@ -36,34 +37,47 @@ class EventsController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
-    {
-        $eventData = $request->all();
 
-        $validator = Validator::make($eventData, [
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'event_date' => 'required|date',
-            'location' => 'nullable|string|max:255',
-            'organizer' => 'nullable|string|max:255',
-            'about_event' => 'nullable|string',
-            'image' => 'nullable|image|max:2048'
-        ]);
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-        $event = Events::create($eventData);
+public function store(Request $request)
+{
+    $eventData = $request->all();
+
+    $validator = Validator::make($eventData, [
+        'title' => 'required|string|max:255',
+        'description' => 'nullable|string',
+        'event_date' => 'required|date',
+        'location' => 'nullable|string|max:255',
+        'organizer' => 'nullable|string|max:255',
+        'about_event' => 'nullable|string',
+        'image' => 'nullable|image|max:2048'
+    ]);
+
+    if ($validator->fails()) {
         return response()->json([
-            'status' => true,
-            'message' => 'Event created successfully',
-            'data' => $event
-        ], 201);
-
+            'status' => false,
+            'message' => 'Validation failed',
+            'errors' => $validator->errors()
+        ], 422);
     }
+
+    // Handle image upload
+    if ($request->hasFile('image')) {
+        $image = $request->file('image');
+        $filename = Str::uuid() . '.' . $image->getClientOriginalExtension();
+        $path = $image->storeAs('events', $filename, 'public'); // stored in storage/app/public/events
+        $eventData['image'] = $path;
+    }
+
+    // Create event
+    $event = Events::create($eventData);
+
+    return response()->json([
+        'status' => true,
+        'message' => 'Event created successfully',
+        'data' => $event
+    ], 201);
+}
+
 
     /**
      * Display the specified resource.

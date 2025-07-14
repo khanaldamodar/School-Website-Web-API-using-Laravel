@@ -5,6 +5,8 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\Notices;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class NoticesController extends Controller
 {
@@ -36,32 +38,45 @@ class NoticesController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
-    {
-        $noticeData = $request->all();
+ 
 
-        $validator = \Validator::make($noticeData, [
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'notice_date' => 'required|date',
-            'image' => 'nullable|image|max:2048'
-        ]);
+public function store(Request $request)
+{
+    $noticeData = $request->all();
 
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
+    $validator = Validator::make($noticeData, [
+        'title' => 'required|string|max:255',
+        'description' => 'nullable|string',
+        'notice_date' => 'required|date',
+        'image' => 'nullable|image|max:2048'
+    ]);
 
-        $notice = Notices::create($noticeData);
-
+    if ($validator->fails()) {
         return response()->json([
-            'status' => true,
-            'data' => $notice
-        ], 201);
+            'status' => false,
+            'message' => 'Validation failed',
+            'errors' => $validator->errors()
+        ], 422);
     }
+
+    // Handle image upload
+    if ($request->hasFile('image')) {
+        $image = $request->file('image');
+        $filename = Str::uuid() . '.' . $image->getClientOriginalExtension();
+        $path = $image->storeAs('notices', $filename, 'public'); // stored in storage/app/public/notices
+        $noticeData['image'] = $path;
+    }
+
+    // Create the notice
+    $notice = Notices::create($noticeData);
+
+    return response()->json([
+        'status' => true,
+        'message' => 'Notice created successfully',
+        'data' => $notice
+    ], 201);
+}
+
 
     /**
      * Display the specified resource.

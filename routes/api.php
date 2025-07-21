@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\API\CourseController;
 use App\Http\Controllers\API\EventsController;
 use App\Http\Controllers\API\GalleryController;
 use App\Http\Controllers\API\NoticesController;
@@ -31,6 +33,10 @@ Route::middleware('auth:sanctum')->get('/users', [App\Http\Controllers\API\AuthC
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+// routes/api.php
+Route::middleware('auth:sanctum')->get('/admin/dashboard', [AdminDashboardController::class, 'index']);
+
 
 
 
@@ -99,6 +105,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/notices/{id}', [NoticesController::class, 'destroy']);
 });
 
+
+
+// ? API Routes for Notices Management
+Route::get('/courses', [CourseController::class, 'index']);
+Route::get('/courses/{id}', [CourseController::class, 'show']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/courses', [CourseController::class, 'store']);
+    Route::put('/courses/{id}', [CourseController::class, 'update']);
+    Route::delete('/courses/{id}', [CourseController::class, 'destroy']);
+});
 
 
 

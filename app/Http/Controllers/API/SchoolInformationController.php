@@ -125,7 +125,7 @@ class SchoolInformationController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-  public function update(Request $request, $id)
+ public function update(Request $request, $id)
 {
     $schoolInformation = $request->all();
 
@@ -150,21 +150,19 @@ class SchoolInformationController extends Controller
 
     try {
         $schoolInfo = SchoolInformation::findOrFail($id);
+        $schoolInformation['updated_by'] = auth()->id();
 
-        $schoolInformation['updated_by'] = auth()->id(); // Check if this is null
-
-        if ($request->hasFile('logo')) {
-            if ($request->file('logo')->isValid()) {
-                $file = $request->file('logo');
-                $filename = time() . '.' . $file->getClientOriginalExtension();
-                $file->move(public_path('uploads/school_logos'), $filename);
-                $schoolInformation['logo'] = 'uploads/school_logos/' . $filename;
-            } else {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Uploaded logo file is invalid'
-                ], 422);
+        if ($request->hasFile('logo') && $request->file('logo')->isValid()) {
+            //  Delete old logo file if exists
+            if ($schoolInfo->logo && file_exists(public_path($schoolInfo->logo))) {
+                unlink(public_path($schoolInfo->logo));
             }
+
+            // Upload new logo
+            $file = $request->file('logo');
+            $filename = time() . '.' . $file->getClientOriginalExtension();
+            $file->move(public_path('uploads/school_logos'), $filename);
+            $schoolInformation['logo'] = 'uploads/school_logos/' . $filename;
         }
 
         $schoolInfo->update($schoolInformation);
@@ -178,10 +176,11 @@ class SchoolInformationController extends Controller
         return response()->json([
             'status' => false,
             'message' => 'Error updating school information',
-            'error' => $th->getMessage() // Make sure to check this!
+            'error' => $th->getMessage()
         ], 500);
     }
 }
+
 
 
     /**

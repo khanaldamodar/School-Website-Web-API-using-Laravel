@@ -19,7 +19,7 @@ class NoticesController extends Controller
     {
         $notices = Notices::all();
 
-        if($notices->isEmpty()) {
+        if ($notices->isEmpty()) {
             return response()->json([
                 'status' => false,
                 'message' => 'No notices found'
@@ -38,44 +38,44 @@ class NoticesController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
- 
 
-public function store(Request $request)
-{
-    $noticeData = $request->all();
 
-    $validator = Validator::make($noticeData, [
-        'title' => 'required|string|max:255',
-        'description' => 'nullable|string',
-        'notice_date' => 'required|date',
-        'image' => 'nullable|image|max:2048'
-    ]);
+    public function store(Request $request)
+    {
+        $noticeData = $request->all();
 
-    if ($validator->fails()) {
+        $validator = Validator::make($noticeData, [
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'notice_date' => 'nullable|date',
+            'image' => 'nullable|image|max:2048'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        // Handle image upload
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            $filename = Str::uuid() . '.' . $image->getClientOriginalExtension();
+            $path = $image->storeAs('notices', $filename, 'public'); // stored in storage/app/public/notices
+            $noticeData['image'] = $path;
+        }
+
+        // Create the notice
+        $notice = Notices::create($noticeData);
+
         return response()->json([
-            'status' => false,
-            'message' => 'Validation failed',
-            'errors' => $validator->errors()
-        ], 422);
+            'status' => true,
+            'message' => 'Notice created successfully',
+            'data' => $notice
+        ], 201);
     }
-
-    // Handle image upload
-    if ($request->hasFile('image')) {
-        $image = $request->file('image');
-        $filename = Str::uuid() . '.' . $image->getClientOriginalExtension();
-        $path = $image->storeAs('notices', $filename, 'public'); // stored in storage/app/public/notices
-        $noticeData['image'] = $path;
-    }
-
-    // Create the notice
-    $notice = Notices::create($noticeData);
-
-    return response()->json([
-        'status' => true,
-        'message' => 'Notice created successfully',
-        'data' => $notice
-    ], 201);
-}
 
 
     /**

@@ -136,56 +136,76 @@ class TeachersController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
-    {
-        $teachersInfo = $request->all();
+   public function update(Request $request, $id)
+{
+    $teachersInfo = $request->all();
 
-        $validator = Validator::make($teachersInfo, [
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:teachers,email,' . $id,
-            'phone' => 'nullable|string|max:15',
-            'address' => 'nullable|string|max:255',
-            'qualification' => 'nullable|string|max:255',
-            'subject' => 'nullable|string|max:255',
-            'bio' => 'nullable|string',
-            'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
-        ]);
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-        try {
-            $teacher = Teacher::findOrFail($id);
-            $teacher->update([
-                'name' => $request->name,
-                'email' => $request->email,
-                'phone' => $request->phone,
-                'address' => $request->address,
-                'qualification' => $request->qualification,
-                'bio' => $request->bio,
-                'profile_picture' => $request->profile_picture,
-                'updated_by' => auth()->id()
-            ]);
+    $validator = Validator::make($teachersInfo, [
+        'name' => 'required|string|max:255',
+        'email' => 'required|email|unique:teachers,email,' . $id,
+        'phone' => 'nullable|string|max:15',
+        'address' => 'nullable|string|max:255',
+        'qualification' => 'nullable|string|max:255',
+        'bio' => 'nullable|string',
+        'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        'subject_ids' => 'required|array',
+        'subject_ids.*' => 'exists:subjects,id',
+    ]);
 
-            $teacher->subjects()->sync($request->subject_ids);
-
-            return response()->json([
-                'status' => true,
-                'message' => 'Teacher updated successfully',
-                'data' => $teacher->load('subjects')
-            ], 200);
-
-        } catch (\Throwable $th) {
-            return response()->json([
-                'status' => false,
-                'message' => 'An error occurred while updating the teacher',
-                'error' => $th->getMessage()
-            ], 500);
-        }
+    if ($validator->fails()) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Validation failed',
+            'errors' => $validator->errors()
+        ], 422);
     }
+
+    try {
+        $teacher = Teacher::findOrFail($id);
+
+        // Handle new profile picture upload
+        if ($request->hasFile('profile_picture')) {
+            // Delete old profile picture if it exists
+            if ($teacher->profile_picture && \Storage::disk('public')->exists($teacher->profile_picture)) {
+                \Storage::disk('public')->delete($teacher->profile_picture);
+            }
+
+            $image = $request->file('profile_picture');
+            $imageName = uniqid() . '_' . time() . '.' . $image->getClientOriginalExtension();
+            $imagePath = $image->storeAs('teachers/profile_pictures', $imageName, 'public');
+        } else {
+            $imagePath = $teacher->profile_picture; // keep the old picture
+        }
+
+        $teacher->update([
+            'name' => $request->name,
+            'email' => $request->email,
+            'phone' => $request->phone,
+            'address' => $request->address,
+            'qualification' => $request->qualification,
+            'bio' => $request->bio,
+            'profile_picture' => $imagePath,
+            'updated_by' => auth()->id(),
+        ]);
+
+        // Sync subjects
+        $teacher->subjects()->sync($request->subject_ids);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Teacher updated successfully',
+            'data' => $teacher->load('subjects')
+        ], 200);
+
+    } catch (\Throwable $th) {
+        return response()->json([
+            'status' => false,
+            'message' => 'An error occurred while updating the teacher',
+            'error' => $th->getMessage()
+        ], 500);
+    }
+}
+
 
     /**
      * Remove the specified resource from storage.
